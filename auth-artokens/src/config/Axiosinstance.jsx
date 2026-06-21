@@ -1,18 +1,26 @@
 import axios from 'axios';
 
 export let axiosInstance = axios.create({
-    baseURL:"https://fakestoreapi.com",
-    // withCredentials:true,
+    baseURL:"http://localhost:3000",
+    withCredentials:true,
 })
 
-// axiosInstance.interceptors.request.use();
-
 axiosInstance.interceptors.response.use(
-    (response)=>{
-        console.log("axios instance responce=>", response)
-        return response
-    },
-    (error)=>{
-        console.log("erron in instance", error)
+  (response) => response,
+  async (error) => {
+    let originalReq = error.config;
+
+    if (error.response.status === 401 || !originalReq.retry) {
+      originalReq.retry = true;
+
+
+      try {
+        await axiosInstance.get("/api/auth/get-accessToken");
+        return axiosInstance(originalReq);
+      } catch (error) {
+        window.location.href = "/";
+        return Promise.reject(error);
+      }
     }
+  }
 );

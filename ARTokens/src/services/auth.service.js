@@ -46,26 +46,29 @@ let loginService = async (data) => {
   try {
     let { email, password } = data;
 
-    if (!email || !password)
-      return res.status(400).json({
-        message: "All fields are required",
-      });
+    if (!email || !password) {
+      let error = new Error("All fields are required");
+      error.status = 400;
+      throw error;
+    }
 
     let isExisted = await UserModel.findOne({
       email,
     });
 
-    if (!isExisted)
-      return res.status(404).json({
-        message: "User not found",
-      });
+    if (!isExisted) {
+      let error = new Error("User not found");
+      error.status = 404;
+      throw error;
+    }
 
     let hashPass = await bcrypt.compare(password, isExisted.password);
 
-    if (!hashPass)
-      return res.status(401).json({
-        message: "Invalid credentials",
-      });
+    if (!hashPass) {
+      let error = new Error("Invalid credentials");
+      error.status = 401;
+      throw error;
+    }
 
     let accessToken = generateAccessToken(isExisted._id);
     let refreshToken = generateRefreshToken(isExisted._id);
@@ -79,7 +82,10 @@ let loginService = async (data) => {
       isExisted,
     };
   } catch (error) {
-    throw new Error(error);
+    if (!error.status) {
+      error.status = 500;
+    }
+    throw error;
   }
 };
 
